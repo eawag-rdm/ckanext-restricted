@@ -1,16 +1,28 @@
-span.restricted-item{
-   pointer-events: none;
-}
-
-a.heading.restricted-item{
+a.heading.restricted-item {
    color: grey;
-   font-style: italic;
 }
 
-.restricted-link{
-  font-size: 14px;
-  display: inline;
-  white-space: nowrap;
+div.dropdown.btn-group.restricted a.btn::before {
+  content: "\f023";
+  font-family: FontAwesome;
+  margin-right: 5px;
+  font-weight: 400;
+  font-size: 1.3em;
+  color: red;
+}
+
+a.heading.restricted-item::before {
+  content: "\f023";
+  font-family: FontAwesome;
+  font-weight: 400;
+  font-size: 1.3em;
+  color:black;
+}
+  
+.restricted-login {
+  position: absolute;
+  top: 14px;
+  right: 10px;
 }
 
 .g-recaptcha {
@@ -19,11 +31,11 @@ a.heading.restricted-item{
  align:right;
 }
 
-.btn-restricted{
+.btn-restricted {
   margin-bottom: 10px;
 }
 
-.restricted-request-summary{
+.restricted-request-summary {
   border: inset 3px;
   border-color: #22222;
   background-color:#f0f0f0;
@@ -32,12 +44,12 @@ a.heading.restricted-item{
   color: #666666;
 }
 
-.restricted-request-summary p{
+.restricted-request-summary p {
     word-break: break-all;
     font-size: 16px;
 }
 
-.restricted-icon-large{
+.restricted-icon-large {
  vertical-align: 0.1%;
  font-size:  1.01em;
  padding-left: 2px;
