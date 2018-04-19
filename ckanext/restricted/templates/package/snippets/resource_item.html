@@ -1,11 +1,4 @@
 {% ckan_extends %}
-
-{# {% set can_edit = h.check_access('package_update', {'id':pkg.id }) %} #}
-
-{# {% set url_action = 'resource_edit' if url_is_edit and can_edit else 'resource_read' %} #}
-{# {% set url = h.url_for(controller='package', action=url_action, id=pkg.name, resource_id=res.id) %} #}
-
-{# {% set authorized = h.check_access('resource_show', {'id':res.id, 'resource':res }) %} #}
 {% set authorized = h.check_access('resource_show', {'id':res.id}) %}
 {% set user_id = h.restricted_get_user_id() %}
 {% set request_access_url = h.url_for('restricted_request_access', package_id=pkg.name, resource_id=res.id) %}
@@ -14,17 +7,13 @@
   {% if authorized %}
     {{ super() }}
   {% else %}
-    {# <span class="restricted-item"> <a class="heading restricted-item" disabled="true" href="#" title="{{ res.name or res.description }}"> #}
-    {#     {{ h.resource_display_name(res) | truncate(35) }} (Unauthorized)<span class="format-label" property="dc:format" data-format="{{ res.format.lower() or 'data' }}">{{ res.format }}</span> #}
-    {#     {{ h.popular('views', res.tracking_summary.total, min=10) }} #}
-    {# </a></span> #}
     <a class="heading restricted-item" href={{ request_access_url }}
        title="{{ res.name or res.description }} (RESTRICTED ACCESS)">
        {{ h.resource_display_name(res) | truncate(50)}}
        <span class="format-label" property="dc:format"
 	     data-format="{{ res.format.lower() or 'data' }}">{{ res.format}}
        </span>
-	 {{ h.popular('views', res.tracking_summary.total, min=10) }}
+       {{ h.popular('views', res.tracking_summary.total, min=10) }}
     </a>
   {% endif %}
 {% endblock %}
