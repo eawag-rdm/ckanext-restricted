@@ -132,63 +132,60 @@ class RestrictedController(toolkit.BaseController):
 
         return render('restricted/restricted_request_access_result.html', extra_vars={'data': data_dict, 'pkg_dict': pkg, 'success': success } )
 
-    def restricted_request_access_form(self, package_id, resource_id, data=None, errors=None, error_summary=None):
-        '''Redirects to form
-        '''
+    def restricted_request_access_form(self, package_id, resource_id, data={},
+                                       errors={}, error_summary={}):
+        "Redirects to form"
+        
+        log.info("\n----------restricted_request_access_form----------------\n")
+        
         user_id = toolkit.c.user
-
+        
+        log.info("user_id: {}".format(user_id))
         if not user_id:
-            toolkit.abort(401, _('Access request form is available to logged in users only.'))
+            
+            toolkit.abort(401, _('Access request form is available to'
+                                 ' logged in users only.'))
 
-        context = {
-            'model': model,
-            'session': model.Session,
-            'user': user_id,
-            'save': 'save' in request.params
-        }
-
-        data = data or {}
-        errors = errors or {}
-        error_summary = error_summary or {}
-
-        if (context['save']) and not data and not errors:
+        if ('save' in request.params) and (not data) and (not errors):
+            log.info("\n no data no errors caontext=save: send_request")
             return self._send_request(context)
-
+        
         if not data:
-            data['package_id'] = package_id
-            data['resource_id'] = resource_id
+ 
+            log.info("\n ----------------\nNO DATA\n")
 
+            user = toolkit.get_action('user_show')(None, {'id': user_id})
+            log.info("\--------------------------------\nuser from toolkit: {}\n".format(user))
+            log.info("\--------------------------------\nget pkg: ".format(package_id))
             try:
-                user = toolkit.get_action('user_show')(context, {'id': user_id})
-                data['user_id'] = user_id
-                data['user_name'] = user.get('display_name', user_id)
-                data['user_email'] = user.get('email', '')
-
-                resource_name = ""
-
-                pkg = toolkit.get_action('package_show')(context, {'id': package_id})
-                data['package_name'] = pkg.get('name')
-                resources = pkg.get('resources', [])
-                for resource in resources:
-                    if resource['id'] == resource_id:
-                        resource_name = resource['name']
-                        break
-                else:
-                    toolkit.abort(404, 'Dataset resource not found')
-                # get mail
-                contact_details = self._get_contact_details(pkg)
+                pkg = toolkit.get_action('package_show')(None, {'id': package_id})
             except toolkit.ObjectNotFound:
                 toolkit.abort(404, _('Dataset not found'))
             except Exception as e:
                 log.warn('Exception Request Form: ' + repr(e))
                 toolkit.abort(404, _('Exception retrieving dataset for the form (' + str(e) + ')'))
-            except:
-                toolkit.abort(404, _('Unknown exception retrieving dataset for the form'))
+                
+            log.info("\n ----------------\nFOUND PACKAGE: {}\n".format(pkg))
+            
+            data['package_id'] = package_id
+            data['resource_id'] = resource_id
+            data['user_id'] = user_id
+            data['user_name'] = user.get('display_name', user_id)
+            data['user_email'] = user.get('email', '')
+            data['package_name'] = pkg.get('name')
+            data['resource_name'] = ''
+            for resource in pkg.get('resources', []):
+                if resource['id'] == resource_id:
+                    data['resource_name'] = resource['name']
+                    break
+            else:
+                toolkit.abort(404, 'Dataset resource not found')
 
-            data['resource_name'] = resource_name
+            contact_details = self._get_contact_details(pkg)
             data['maintainer_email'] = contact_details.get('contact_email', '')
             data['maintainer_name'] = contact_details.get('contact_name', '')
         else:
+            log.info("\n ----------------\nnDATA --------------------\n")
             pkg = data.get('pkg_dict', {})
 
         extra_vars = {'pkg_dict':pkg, 'data': data, 'errors':errors, 'error_summary': error_summary}

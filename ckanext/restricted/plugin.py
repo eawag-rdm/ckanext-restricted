@@ -22,14 +22,12 @@ class RestrictedPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IResourceController, inherit=True)
 
     # IConfigurer
-
     def update_config(self, config_):
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'restricted')
 
     # IActions
-
     def get_actions(self):
         return { 'user_create': action.restricted_user_create_and_notify,
                  'resource_view_list': action.restricted_resource_view_list,
@@ -39,12 +37,10 @@ class RestrictedPlugin(plugins.SingletonPlugin):
         }
 
     # ITemplateHelpers
-
     def get_helpers(self):
         return { 'restricted_get_user_id':helpers.restricted_get_user_id}
 
     # IAuthFunctions
-
     def get_auth_functions(self):
         return { 'resource_show': auth.restricted_resource_show,
                  'resource_view_show': auth.restricted_resource_show
