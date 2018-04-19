@@ -35,12 +35,12 @@
   {% else %} 
     {% if user_id %}
       <div class="dropdown btn-group restricted">
-        <a href="{{ request_access_url }}" class="btn btn-primary">{{ _('Request access')}}</a>
+        <a href="{{ request_access_url }}" class="btn btn-primary">{{ _('Get access')}}</a>
       </div>
     {% else %}
       <div class="restricted-login">
         <i class="fa fa-icon fa-user"></i>
-        <a href="{{ h.url_for(controller='user', action='login', came_from='/dataset/'+pkg.name) }}" >{{ _('Log in to request access') }}</a>
+	<a href="{{ h.url_for(controller='user', action='login', came_from=request_access_url) }}" >{{ _('Log in to request access') }}</a> 
       </div>
     {% endif %}
   {% endif %}
