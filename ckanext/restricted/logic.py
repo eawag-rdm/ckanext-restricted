@@ -18,6 +18,9 @@ from logging import getLogger
 log = getLogger(__name__)
 
 def restricted_check_user_resource_access(user, resource_dict, package_dict):
+
+    log.debug("\n IN LOGIC.restricted_check_user_resource_access\n")
+    
     restricted_level = 'public'
     allowed_users  = []
 
@@ -29,24 +32,19 @@ def restricted_check_user_resource_access(user, resource_dict, package_dict):
             try:
                 restricted = json.loads(restricted)
             except:
-                log.info('Error loading restricted value: "{0}"'.format(restricted))
+                log.info('Error loading restricted value: "{}"'.format(restricted))
                 restricted = {}
-
-        if restricted:
-            restricted_level = restricted.get('level', 'public')
-            allowed_users = restricted.get('allowed_users', '').split(',')
+        restricted_level = restricted.get('level', 'public')
+        allowed_users = restricted.get('allowed_users', '').split(',')
 
     # Public resources (DEFAULT)
-    if not restricted_level or restricted_level == 'public':
+    if restricted_level == 'public':
         return {'success': True }
 
-    # Registered user
+    # Anonymous can't have access to restricted resources
     if not user:
         return {'success': False, 'msg': 'Resource access restricted to registered users' }
-    else:
-        if restricted_level == 'registered' or not restricted_level:
-            return {'success': True }
-
+### CONTINUE HERE ###
     # Since we have a user, check if it is in the allowed list
     if user in allowed_users:
         return {'success': True }
