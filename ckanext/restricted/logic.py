@@ -1,7 +1,6 @@
 import sys
 import json
 from sets import Set
-
 import ckan.lib.mailer as mailer
 import ckan.logic as logic
 #from ckan.common import config
@@ -82,7 +81,6 @@ def restricted_check_user_resource_access(user, resource_dict, package_dict):
     return {'success': False, 'msg': 'Resource access restricted to same organization (' + pkg_organization_id + ') members' }
 
 def restricted_mail_allowed_user(user_id, resource):
-    log.debug('restricted_mail_allowed_user notifying {0}'.format(user_id))
     try:
         # Get user information
         context = {}

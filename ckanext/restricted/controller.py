@@ -1,33 +1,27 @@
+import re
 import ckan.model as model
 import ckan.logic as logic
 import ckan.lib.base as base
 import ckan.lib.helpers as h
-import ckan.lib.captcha as captcha
 import ckan.lib.mailer as mailer
 
 import ckan.plugins.toolkit as toolkit
 from ckan.common import _, request, c, g
 from ckan.lib.base import render_jinja2
-
 from logging import getLogger
-
 try:
     # CKAN 2.7 and later
     from ckan.common import config
 except ImportError:
     # CKAN 2.6 and earlier
     from pylons import config
-
 from email.header import Header
-
 import simplejson as json
-
 import ckan.lib.navl.dictization_functions as dictization_functions
 DataError = dictization_functions.DataError
 unflatten = dictization_functions.unflatten
 
 render = base.render
-
 log = getLogger(__name__)
 
 class RestrictedController(toolkit.BaseController):
@@ -42,164 +36,214 @@ class RestrictedController(toolkit.BaseController):
             base.abort(401, _('Not authorized to see this page'))
 
     def _send_request_mail(self, data):
-        success = False
+        access_mail_template = 'restricted/emails/restricted_access_request.txt'
+        resource_link = toolkit.url_for(
+            controller='package',
+            action='resource_read',
+            id=data.get('package_name'),
+            resource_id=data.get('resource_id'))
+        
+        resource_edit_link = toolkit.url_for(
+            controller='package',
+            action='resource_edit',
+            id=data.get('package_name'),
+            resource_id=data.get('resource_id'))
+
+        organame = data.get('pkg_dict').get('organization').get('name')
+        datamanager = toolkit.get_action('eaw_schema_datamanger_show')(
+            data_dict={'organization': organame})
+            
+        extra_vars = {
+            'site_title': config.get('ckan.site_title'),
+            'site_url': config.get('ckan.site_url'),
+            'maintainer_name': data.get('maintainer_name'),
+            'user_id': data.get('user_id'),
+            'user_name': data.get('user_name'),
+            'user_email': data.get('user_email'),
+            'resource_name': data.get('resource_name'),
+            'resource_link': config.get('ckan.site_url') + resource_link,
+            'resource_edit_link': (config.get('ckan.site_url')
+                                   + resource_edit_link),
+            'package_name': data.get('package_name'),
+            'message': data.get('message'),
+            'admin_email_to': config.get('email_to'),
+            'data_manager_name': datamanager.get('fullname'),
+            'data_manager_homepage': datamanager.get('homepage')
+        }
+
+        body = render_jinja2(access_mail_template, extra_vars)
+        subject = Header(
+            'Access request for  ' + data.get('package_name')
+            + '/' + data.get('resource_name'), 'utf-8').encode('utf-8')
+        recip_name = (u'"'
+                      + data.get('maintainer_name').decode('utf-8')
+                      + u'"')
+        recip_email = data.get('maintainer_email').encode('utf-8')
+        admin_name = ('{} Admin'
+                      .format(config.get('ckan.site_title'))
+                      .encode('utf-8'))
+        admin_email = config.get('email_to').encode('utf-8')
+        headers = {'Reply-To': data.get('user_email').encode('utf-8')}
         try:
-
-            resource_link = toolkit.url_for(controller='package', action='resource_read',
-                                    id=data.get('package_name'), resource_id=data.get('resource_id'))
-
-            resource_edit_link = toolkit.url_for(controller='package', action='resource_edit',
-                                              id=data.get('package_name') , resource_id=data.get('resource_id'))
-
-            extra_vars = {
-                'site_title': config.get('ckan.site_title'),
-                'site_url': config.get('ckan.site_url'),
-                'maintainer_name': data.get('maintainer_name', 'Maintainer'),
-                'user_id': data.get('user_id','the user id'),
-                'user_name': data.get('user_name', ''),
-                'user_email': data.get('user_email', ''),
-                'resource_name': data.get('resource_name',''),
-                'resource_link': config.get('ckan.site_url') + resource_link,
-                'resource_edit_link': config.get('ckan.site_url') + resource_edit_link,
-                'package_name': data.get('resource_name',''),
-                'message': data.get('message',''),
-                'admin_email_to': config.get('email_to', 'email_to_undefined')
-                }
-
-            body = render_jinja2('restricted/emails/restricted_access_request.txt', extra_vars)
-            subject = 'Access Request to resource ' +  data.get('resource_name','') + ' (' +  data.get('package_name','')  + ') from ' + data.get('user_name','')
-
-            email_dict = {data.get('maintainer_email'): extra_vars.get('maintainer_name'), extra_vars.get('admin_email_to'): extra_vars.get('site_title') + ' Admin'}
-            headers = {'CC': ",".join(email_dict.keys()),  'reply-to': data.get('user_email')}
-
-            ## CC doesn't work and mailer cannot send to multiple addresses
-            for email, name in email_dict.iteritems():
-                mailer.mail_recipient(name, email, subject, body, headers)
-
-            ## Special copy for the user (no links)
-            email = data.get('user_email')
-            name = data.get('user_name','User')
-
-            extra_vars['resource_link'] = '[...]'
-            extra_vars['resource_edit_link'] = '[...]'
-            body = render_jinja2('restricted/emails/restricted_access_request.txt', extra_vars)
-            body_user = u"Please find below a copy of the access request mail sent. \n\n >> {0}".format( body.replace("\n", "\n >> "))
-            mailer.mail_recipient(name, email, 'Fwd: ' + subject, body_user, headers)
-            success=True
-
+            mailer.mail_recipient(recip_name, recip_email, subject,
+                                  body, headers)
         except mailer.MailerException as mailer_exception:
-            log.error("Cannot access request mail after registration ")
-            log.error(mailer_exception)
-            pass
+            error_summary = ('Mail to Usage Contact: {}'
+                             .format(mailer_exception))
+            log.error(error_summary)
+            return error_summary
+            
+        # A copy goes to the admin. CC doesn't work because ckan.lib.mailer
+        # does not parameterize envelope addresss.
+        try:
+            mailer.mail_recipient(admin_name, admin_email,
+                                  subject + ' (copy)', body, headers)
+        except mailer.MailerException as mailer_exception:
+            error_summary = ('Copy to admin: {}'.format(mailer_exception))
+            log.error(error_summary)
+            return error_summary
+            
+        # Copy for requestor
+        # Modified message body that does not disclose the links to the resource
+        extra_vars['resource_link'] = '[undisclosed]'
+        extra_vars['resource_edit_link'] = '[undisclosed]'
+        body = render_jinja2(access_mail_template, extra_vars)
+        body_user = (u'Please find below a copy of the access request'
+                     ' mail sent on your behalf:\n\n-----------------------'
+                     '----------------------------------------------------\n'
+                     '{}'.format(body) + '\n-------------------------------'
+                     '--------------------------------------------\n')
+        headers = {'Reply-To': config.get('email_to').decode('utf-8')}
+        recip_name = Header(
+            u'"{}"'.format(data.get('user_name')), 'utf-8').encode('utf-8')
+        try:
+            mailer.mail_recipient(recip_name,
+                                  data.get('user_email').encode('utf-8'),
+                                  'Fwd: ' + subject, body_user, headers)
+        except mailer.MailerException as mailer_exception:
+            error_summary = 'Copy for requestor: {}'.format(mailer_exception)
+            log.error(error_summary)
+            return error_summary
 
-        return success
+        return False
 
-    def _send_request(self, context):
-
+        
+    def _send_request(self, context=None):
         try:
             data_dict = logic.clean_dict(unflatten(
                 logic.tuplize_dict(logic.parse_params(request.params))))
-
-            captcha.check_recaptcha(request)
-
         except logic.NotAuthorized:
             toolkit.abort(401, _('Not authorized to see this page'))
-        except captcha.CaptchaError:
-            error_msg = _(u'Bad Captcha. Please try again.')
-            h.flash_error(error_msg)
-            return self.restricted_request_access_form(package_id=data_dict.get('package_name'), resource_id=data_dict.get('resource'), data=data_dict)
-
         try:
-            pkg = toolkit.get_action('package_show')(context, {'id': data_dict.get('package_name')})
-            data_dict['pkg_dict'] = pkg
+            data_dict['pkg_dict'] = toolkit.get_action('package_show')(
+                context,
+                {'id': data_dict.get('package_name')})
         except toolkit.ObjectNotFound:
-            toolkit.abort(404, _('Dataset not found'))
+            toolkit.abort(404, _('Package not found'))
         except:
-            toolkit.abort(404, _('Exception retrieving dataset to send mail'))
+            toolkit.abort(404, _('Exception retrieving package'))
 
         # Validation
         errors = {}
         error_summary = {}
-
-        if (data_dict["message"] == ''):
+        
+        if data_dict.get('message', '') == '':
             errors['message'] = [u'Missing Value']
             error_summary['message'] =  u'Missing Value'
 
         if len(errors) > 0:
-            return self.restricted_request_access_form(package_id=data_dict.get('package-name'), resource_id=data_dict.get('resource'), errors=errors, error_summary=error_summary, data=data_dict)
+            return self.restricted_request_access_form(
+                package_id=data_dict.get('package-name'),
+                resource_id=data_dict.get('resource'),
+                errors=errors, error_summary=error_summary, data=data_dict)
 
-        success = self._send_request_mail(data_dict)
-
-        return render('restricted/restricted_request_access_result.html', extra_vars={'data': data_dict, 'pkg_dict': pkg, 'success': success } )
+        error_summary = self._send_request_mail(data_dict)
+        return render('restricted/restricted_request_access_result.html',
+                      extra_vars={
+                          'data': data_dict,
+                          'error_summary': error_summary,
+                          'pkg_dict': data_dict.get('pkg_dict')})
 
     def restricted_request_access_form(self, package_id, resource_id, data={},
                                        errors={}, error_summary={}):
-        "Redirects to form"
-        
-        log.info("\n----------restricted_request_access_form----------------\n")
-        
         user_id = toolkit.c.user
-        
-        log.info("user_id: {}".format(user_id))
+
         if not user_id:
-            
             toolkit.abort(401, _('Access request form is available to'
                                  ' logged in users only.'))
 
-        if ('save' in request.params) and (not data) and (not errors):
-            log.info("\n no data no errors caontext=save: send_request")
-            return self._send_request(context)
+        if ('save' in request.params) and data and (not errors):
+            return self._send_request()
         
         if not data:
- 
-            log.info("\n ----------------\nNO DATA\n")
-
             user = toolkit.get_action('user_show')(None, {'id': user_id})
-            log.info("\--------------------------------\nuser from toolkit: {}\n".format(user))
-            log.info("\--------------------------------\nget pkg: ".format(package_id))
             try:
-                pkg = toolkit.get_action('package_show')(None, {'id': package_id})
+                data['pkg_dict'] = toolkit.get_action(
+                    'package_show')(None, {'id': package_id})
             except toolkit.ObjectNotFound:
                 toolkit.abort(404, _('Dataset not found'))
             except Exception as e:
                 log.warn('Exception Request Form: ' + repr(e))
-                toolkit.abort(404, _('Exception retrieving dataset for the form (' + str(e) + ')'))
-                
-            log.info("\n ----------------\nFOUND PACKAGE: {}\n".format(pkg))
+                toolkit.abort(404, _('Exception retrieving dataset ('
+                                     + str(e) + ')'))
             
             data['package_id'] = package_id
             data['resource_id'] = resource_id
             data['user_id'] = user_id
             data['user_name'] = user.get('display_name', user_id)
             data['user_email'] = user.get('email', '')
-            data['package_name'] = pkg.get('name')
+            data['package_name'] = data['pkg_dict'].get('name')
             data['resource_name'] = ''
-            for resource in pkg.get('resources', []):
+            
+            for resource in data['pkg_dict'].get('resources', []):
                 if resource['id'] == resource_id:
                     data['resource_name'] = resource['name']
                     break
             else:
                 toolkit.abort(404, 'Dataset resource not found')
 
-            contact_details = self._get_contact_details(pkg)
+            contact_details = self._get_contact_details(data['pkg_dict'])
             data['maintainer_email'] = contact_details.get('contact_email', '')
             data['maintainer_name'] = contact_details.get('contact_name', '')
+            
         else:
-            log.info("\n ----------------\nnDATA --------------------\n")
-            pkg = data.get('pkg_dict', {})
-
-        extra_vars = {'pkg_dict':pkg, 'data': data, 'errors':errors, 'error_summary': error_summary}
-        return render('restricted/restricted_request_access_form.html', extra_vars=extra_vars)
+            pass
+        
+        extra_vars = {'pkg_dict': data['pkg_dict'], 'data': data,
+                      'errors':errors, 'error_summary': error_summary}
+        return render('restricted/restricted_request_access_form.html',
+                      extra_vars=extra_vars)
 
     def _get_contact_details(self, pkg_dict):
         contact_email = ""
         contact_name = ""
+        
+        # Usage contact in Lastname, Firstname(s) <name@email.provider.tld> form.
+        
+        # This defined a valid emai address, according to
+        # https://stackoverflow.com/a/201378
+        emailregex = (
+            '(?:[a-z0-9!#$%&\'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&\'*+/=?^_`{|}~-]+'
+            ')*|\\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x'
+            '7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\\")@(?:(?:[a-z0-9](?:['
+            'a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:(2'
+            '(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\.){3}(?:(2(5[0-5]|[0'
+            '-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x'
+            '08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0'
+            'b\\x0c\\x0e-\\x7f])+)\\])')
+        personregex = re.compile('(?P<contact_name>.*?)<(?P<contact_email>'
+                                 + emailregex+r')>')
+        parsed = re.search(personregex, pkg_dict.get('usage_contact'))
+        contact_email = parsed.groupdict().get('contact_email', '')
+        contact_name = parsed.groupdict().get('contact_name', '')
+
         # Maintainer as Composite field
-        try:
-            contact_email = json.loads(pkg_dict.get('maintainer', "{}")).get('email','')
-            contact_name = json.loads(pkg_dict.get('maintainer', "{}")).get('name','Dataset Maintainer')
-        except:
-            pass
+        if not contact_email:
+            try:
+                contact_email = json.loads(pkg_dict.get('maintainer', "{}")).get('email','')
+                contact_name = json.loads(pkg_dict.get('maintainer', "{}")).get('name','Dataset Maintainer')
+            except:
+                pass
         # Maintainer Directly defined
         if not contact_email:
             contact_email = pkg_dict.get('maintainer_email', "")

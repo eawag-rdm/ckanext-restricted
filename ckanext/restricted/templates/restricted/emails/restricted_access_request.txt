@@ -1,18 +1,25 @@
-
 Dear {{ maintainer_name }},
 
 A user has requested access to your data in {{ site_title }}:
- * Resource: {{ resource_name }} ( {{ resource_link }} )
- * Dataset: {{ package_name }}
- * User: {{ user_name }} ( {{ user_email }} )
+
+ * Package: {{ package_name }}
+ 
+ * Resource: {{ resource_name }} ({{ resource_link }})
+ 
+ * User: {{ user_id }} ({{ user_name }} <{{ user_email }}>)
+ 
  * Message: {{ message }}
 
-You can allow this user to access you resource by adding {{ user_id }} to the list of allowed users.
-If you have editor rights, you can edit the resource in this link: {{ resource_edit_link }}.
-If you have any questions about how to proceed with this request, please contact the {{ site_title }} support at {{ admin_email_to }}.
+You can allow this user to access {{ resource_name }} by adding {{ user_id }} to the list of allowed users ({{ resource_edit_link }}).
 
-Best regards,
-{{ site_title }} Administrator
+
+If you don't have the necessary permission, please contact your Data Manager:
+
+Name: {{ data_manager_name }}
+Homepage: {{ data_manager_homepage }}  
+
+Kind regards,
+{{ site_title }} Administrator <{{ admin_email_to }}>
 
 ----------------------------------------------------------
 Message sent from {{ site_title }} ({{ site_url }})
