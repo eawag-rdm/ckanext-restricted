@@ -8,7 +8,6 @@ log = getLogger(__name__)
 
 @toolkit.auth_allow_anonymous_access
 def restricted_resource_show(context, data_dict=None):
-
     # Ensure user who can edit the package can see the resource
     resource = data_dict.get('resource', context.get('resource',{}))
     if not resource:
@@ -33,5 +32,4 @@ def restricted_resource_show(context, data_dict=None):
         model = context['model']
         package = model.Package.get(resource.get('package_id'))
         package = package.as_dict()
-
     return logic.restricted_check_user_resource_access(user_name, resource, package)

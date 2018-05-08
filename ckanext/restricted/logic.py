@@ -18,21 +18,20 @@ from logging import getLogger
 log = getLogger(__name__)
 
 def restricted_check_user_resource_access(user, resource_dict, package_dict):
-
-    log.debug("\n IN LOGIC.restricted_check_user_resource_access\n")
-    
     restricted_level = 'public'
     allowed_users  = []
 
     # check in resource_dict
     if resource_dict:
         extras = resource_dict.get('extras',{})
-        restricted = resource_dict.get('restricted', extras.get('restricted', {}))
+        restricted = resource_dict.get(
+            'restricted', extras.get('restricted', {}))
         if not isinstance(restricted, dict):
             try:
                 restricted = json.loads(restricted)
             except:
-                log.info('Error loading restricted value: "{}"'.format(restricted))
+                log.info(
+                    'Error loading restricted value: "{}"'.format(restricted))
                 restricted = {}
         restricted_level = restricted.get('level', 'public')
         allowed_users = restricted.get('allowed_users', '').split(',')
@@ -66,6 +65,11 @@ def restricted_check_user_resource_access(user, resource_dict, package_dict):
             else:
                 return {'success': False,
                         'msg': 'Access restricted to allowed users only'}
+        else:
+            msg = 'Unknown restriction level: "{}" for resource {}'.format(
+                restricted_level, resource_dict.get('id'))
+            log.error(msg)
+            return {'success': False, 'msg': msg}
 
 def restricted_mail_allowed_user(user_id, resource):
     try:

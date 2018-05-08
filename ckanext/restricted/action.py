@@ -4,7 +4,10 @@ from ckan.lib.mailer import MailerException
 import ckan.logic
 from ckan.logic.action.create import user_create
 from ckan.logic import side_effect_free, check_access
-from ckan.logic.action.get import package_show, resource_show, resource_view_list, resource_search, package_search
+from ckan.logic.action.get import (
+    package_show, resource_show,
+    resource_view_list, resource_search,
+    package_search)
 import ckan.logic.auth as logic_auth
 import ckan.authz as authz
 from ckanext.restricted import helpers
@@ -40,22 +43,18 @@ def restricted_resource_view_list(context, data_dict):
 
 @side_effect_free
 def restricted_package_show(context, data_dict):
-
     package_metadata = package_show(context, data_dict)
-
     # Ensure user who can edit can see the resource
-    if authz.is_authorized('package_update', context, package_metadata).get('success', False):
+    if authz.is_authorized('package_update', context,
+                             package_metadata).get('success', False):
         return package_metadata
 
     # Custom authorization
-    if (type(package_metadata) == type(dict())):
-        restricted_package_metadata = dict(package_metadata)
-    else:
-        restricted_package_metadata = dict(package_metadata.for_json())
+    restricted_package_metadata = package_metadata
+    restricted_package_metadata['resources'] = _restricted_resource_list_url(
+        context, restricted_package_metadata.get('resources',[]))
 
-    restricted_package_metadata['resources'] = _restricted_resource_list_url(context, restricted_package_metadata.get('resources',[]))
-
-    return (restricted_package_metadata)
+    return restricted_package_metadata
 
 
 @side_effect_free
@@ -92,7 +91,10 @@ def restricted_package_search(context, data_dict):
 def _restricted_resource_list_url(context, resource_list):
     restricted_resources_list = []
     for resource in resource_list:
-        authorized = auth.restricted_resource_show(context, {'id':resource.get('id'), 'resource':resource}).get('success', False)
+        restres = auth.restricted_resource_show(
+            context,
+            {'id':resource.get('id'), 'resource':resource})
+        authorized = restres.get('success', False)
         restricted_resource = dict(resource)
         if not authorized:
             restricted_resource['url'] = 'Not Authorized'
