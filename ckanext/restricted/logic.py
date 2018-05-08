@@ -40,43 +40,32 @@ def restricted_check_user_resource_access(user, resource_dict, package_dict):
     # Public resources (DEFAULT)
     if restricted_level == 'public':
         return {'success': True }
+    else:
+        # Anonymous can't have access to restricted resources
+        if not user:
+            return {'success': False,
+                    'msg': 'Access restricted to registered users'}
 
-    # Anonymous can't have access to restricted resources
-    if not user:
-        return {'success': False, 'msg': 'Resource access restricted to registered users' }
-### CONTINUE HERE ###
-    # Since we have a user, check if it is in the allowed list
-    if user in allowed_users:
-        return {'success': True }
-    elif  restricted_level == 'only_allowed_users':
-        return {'success': False, 'msg': 'Resource access restricted to allowed users only' }
-
-    # Get organization list
-    user_organization_dict = {}
-
-    context = {'user': user}
-    data_dict = {'permission': 'read'}
-
-    for org in logic.get_action('organization_list_for_user')(context, data_dict):
-        name = org.get('name', '')
-        id = org.get('id', '')
-        if name and id:
-            user_organization_dict[id] =  name
-
-    # Any Organization Members (Trusted Users)
-    if not user_organization_dict:
-        return {'success': False, 'msg': 'Resource access restricted to members of an organization' }
-    if restricted_level == 'any_organization':
-        return {'success': True }
-
-    pkg_organization_id = package_dict.get('owner_org', '')
-
-    # Same Organization Members
-    if restricted_level == 'same_organization':
-        if pkg_organization_id in user_organization_dict.keys():
-            return {'success': True }
-
-    return {'success': False, 'msg': 'Resource access restricted to same organization (' + pkg_organization_id + ') members' }
+        # Same Organization Members
+        if restricted_level == 'same_organization':
+            # Get organization list
+            context = {'user': user}
+            data_dict = {'permission': 'read'}
+            orgs = logic.get_action('organization_list_for_user')(context, data_dict)
+            user_organization_list = [org.get('id') for org in orgs if org.get('id')]
+            pkg_organization_id = package_dict.get('owner_org', '')
+            if pkg_organization_id in user_organization_dict.keys():
+                return {'success': True}
+            else:
+                return {'success': False,
+                        'msg': ('Access restricted to same organization'
+                                ' ({}) members'.format(pkg_organization_id))}
+        elif restricted_level == 'only_allowed_users':
+            if user in allowed_users:
+                return {'success': True}
+            else:
+                return {'success': False,
+                        'msg': 'Access restricted to allowed users only'}
 
 def restricted_mail_allowed_user(user_id, resource):
     try:
