@@ -1,6 +1,5 @@
 import sys
 import json
-from sets import Set
 import ckan.lib.mailer as mailer
 import ckan.logic as logic
 #from ckan.common import config
@@ -117,14 +116,29 @@ def restricted_notify_allowed_users(previous_value, updated_resource):
             return json.loads(json_string)
         except:
             return default
+    log.debug('\n\n previous_value: {}\n'.format(previous_value))
+    log.debug('\n\n updated_resource: {}\n'.format(updated_resource))
 
-    previous_restricted = _safe_json_loads(previous_value)
+    previous_allowed_users = set(
+        [u for u in (_safe_json_loads(previous_value)
+                     .get('allowed_users', '')
+                     .split(',')) if u])
+    log.debug("\n\n previous_allowed_users: {}".format(previous_allowed_users))
+
     updated_restricted = _safe_json_loads(updated_resource.get('restricted', ''))
+    updated_allowed_users =  set(
+        [u for u in (_safe_json_loads(updated_resource.get('restricted', ''))
+                     .get('allowed_users', '')
+                     .split(',')) if u])
+    
+    log.debug('\n\n updated_allowed_users: {}\n'.format(updated_allowed_users))
 
-    # compare restricted users_allowed values
-    updated_allowed_users =  Set(updated_restricted.get('allowed_users','').split(','))
-    if updated_allowed_users:
-        previous_allowed_users = previous_restricted.get('allowed_users','').split(',')
-        for user_id in updated_allowed_users:
-            if user_id not in previous_allowed_users:
-                restricted_mail_allowed_user(user_id, updated_resource)
+    notify_users = updated_allowed_users - previous_allowed_users
+    log.debug('\n\n notify_users: {}\n'.format(notify_users))
+
+    for user_id in notify_users:
+        log.debug('\n\n user_id: {}\n'.format(user_id))
+        #restricted_mail_allowed_user(user_id, updated_resource)
+
+
+
