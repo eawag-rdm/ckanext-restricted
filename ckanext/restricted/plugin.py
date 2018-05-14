@@ -1,17 +1,15 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-
-import ckan.logic
-
 from ckanext.restricted import helpers
 from ckanext.restricted import logic
 from ckanext.restricted import auth
 from ckanext.restricted import action
+# from json import dumps, loads
 
 from logging import getLogger
 log = getLogger(__name__)
 
-_get_or_bust = ckan.logic.get_or_bust
+_get_or_bust = toolkit.get_or_bust
 
 class RestrictedPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
@@ -55,8 +53,12 @@ class RestrictedPlugin(plugins.SingletonPlugin):
 
     # IResourceController
     def before_update(self, context, current, resource):
+        log.debug('\n\n context before: {}\n'.format(context))
+
         context['__restricted_previous_value'] = current.get('restricted')
 
     def after_update(self, context, resource):
         previous_value = context.get('__restricted_previous_value')
+        log.debug("\n previous value = {}\n".format(previous_value))
         logic.restricted_notify_allowed_users(previous_value, resource)
+
