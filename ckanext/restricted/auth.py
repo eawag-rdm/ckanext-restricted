@@ -1,10 +1,7 @@
 import ckan.plugins.toolkit as toolkit
 import ckan.authz as authz
-import ckan.logic
 import ckan.logic.auth as logic_auth
 from ckanext.restricted import logic
-from logging import getLogger
-log = getLogger(__name__)
 
 @toolkit.auth_allow_anonymous_access
 def restricted_resource_show(context, data_dict=None):
@@ -32,4 +29,5 @@ def restricted_resource_show(context, data_dict=None):
         model = context['model']
         package = model.Package.get(resource.get('package_id'))
         package = package.as_dict()
+     
     return logic.restricted_check_user_resource_access(user_name, resource, package)

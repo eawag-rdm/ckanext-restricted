@@ -1,10 +1,9 @@
-import sys
-import json
 import ckan.lib.mailer as mailer
 import ckan.logic as logic
 #from ckan.common import config
 from ckan.lib.base import render_jinja2
 import ckan.plugins.toolkit as toolkit
+from json import loads
 
 try:
     # CKAN 2.7 and later
@@ -17,58 +16,60 @@ from logging import getLogger
 log = getLogger(__name__)
 
 def restricted_check_user_resource_access(user, resource_dict, package_dict):
-    restricted_level = 'public'
-    allowed_users  = []
+    ''' Checks whether user can access resource. Considers 3 levels:
+          + public
+          + same_organization
+          + only_allowed_users
+    The latter two are additive: You can give permision to your orga and then
+    some more.
 
-    # check in resource_dict
-    if resource_dict:
-        extras = resource_dict.get('extras',{})
-        restricted = resource_dict.get(
-            'restricted', extras.get('restricted', {}))
-        if not isinstance(restricted, dict):
-            try:
-                restricted = json.loads(restricted)
-            except:
-                log.info(
-                    'Error loading restricted value: "{}"'.format(restricted))
-                restricted = {}
-        restricted_level = restricted.get('level', 'public')
-        allowed_users = restricted.get('allowed_users', '').split(',')
+    '''
+
+    restricted_level = resource_dict.get('restricted_level', 'public')
+    try:
+        # are the allowwed_users in a json-list?
+        allowed_users = loads(resource_dict.get('allowed_users', '[]'))
+        if not isinstance(allowed_users, list):
+            raise
+    except:
+        # then they better be a comma separated string.
+        allowed_users = resource_dict.get('allowed_users', '').split(',')
 
     # Public resources (DEFAULT)
     if restricted_level == 'public':
         return {'success': True }
-    else:
-        # Anonymous can't have access to restricted resources
-        if not user:
-            return {'success': False,
-                    'msg': 'Access restricted to registered users'}
+    
+    # Anonymous can't have access to restricted resources
+    if not user:
+        return {'success': False,
+                'msg': 'No access for anonymous users'}
+        
+    if user in allowed_users:
+        # User explicitly allowed
+        return {'success': True}
 
-        # Same Organization Members
-        if restricted_level == 'same_organization':
-            # Get organization list
-            context = {'user': user}
-            data_dict = {'permission': 'read'}
-            orgs = logic.get_action('organization_list_for_user')(context, data_dict)
-            user_organization_list = [org.get('id') for org in orgs if org.get('id')]
-            pkg_organization_id = package_dict.get('owner_org', '')
-            if pkg_organization_id in user_organization_dict.keys():
-                return {'success': True}
-            else:
-                return {'success': False,
-                        'msg': ('Access restricted to same organization'
-                                ' ({}) members'.format(pkg_organization_id))}
-        elif restricted_level == 'only_allowed_users':
-            if user in allowed_users:
-                return {'success': True}
-            else:
-                return {'success': False,
-                        'msg': 'Access restricted to allowed users only'}
+    if restricted_level == 'only_allowed_users':
+        return {'success': False,
+                'msg': 'Access restricted to allowed users only'}
+    elif restricted_level == 'same_organization':
+        orga_id = package_dict.get('owner_org')
+        data_dict = {'permission': 'read', 'id': user}
+        user_orgs = toolkit.get_action(
+            'organization_list_for_user')(None, data_dict)
+        user_orgs = [x.get('id') for x in user_orgs if x.get('id')]
+
+        if orga_id in user_orgs:
+            return {'success': True}
         else:
-            msg = 'Unknown restriction level: "{}" for resource {}'.format(
-                restricted_level, resource_dict.get('id'))
-            log.error(msg)
-            return {'success': False, 'msg': msg}
+            return {'success': False,
+                    'msg': ('Access restricted to same organization'
+                                ' ({}) members'.format(orga_id))}
+    else:
+        msg = 'Unknown restriction level: "{}" for resource {}'.format(
+            restricted_level, resource_dict.get('id'))
+        log.error(msg)
+        return {'success': False, 'msg': msg}
+
 
 def restricted_mail_allowed_user(user_id, resource):
     try:
@@ -113,17 +114,14 @@ def restricted_allowed_user_mail_body(user, resource):
 def restricted_notify_allowed_users(previous_value, updated_resource):
     def _safe_json_loads(json_string, default={}):
         try:
-            return json.loads(json_string)
+            return loads(json_string)
         except:
             return default
-    log.debug('\n\n previous_value: {}\n'.format(previous_value))
-    log.debug('\n\n updated_resource: {}\n'.format(updated_resource))
 
     previous_allowed_users = set(
         [u for u in (_safe_json_loads(previous_value)
                      .get('allowed_users', '')
                      .split(',')) if u])
-    log.debug("\n\n previous_allowed_users: {}".format(previous_allowed_users))
 
     updated_restricted = _safe_json_loads(updated_resource.get('restricted', ''))
     updated_allowed_users =  set(
@@ -131,10 +129,8 @@ def restricted_notify_allowed_users(previous_value, updated_resource):
                      .get('allowed_users', '')
                      .split(',')) if u])
     
-    log.debug('\n\n updated_allowed_users: {}\n'.format(updated_allowed_users))
 
     notify_users = updated_allowed_users - previous_allowed_users
-    log.debug('\n\n notify_users: {}\n'.format(notify_users))
 
     for user_id in notify_users:
         log.debug('\n\n user_id: {}\n'.format(user_id))

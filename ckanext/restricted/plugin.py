@@ -53,12 +53,9 @@ class RestrictedPlugin(plugins.SingletonPlugin):
 
     # IResourceController
     def before_update(self, context, current, resource):
-        log.debug('\n\n context before: {}\n'.format(context))
-
         context['__restricted_previous_value'] = current.get('restricted')
 
     def after_update(self, context, resource):
         previous_value = context.get('__restricted_previous_value')
-        log.debug("\n previous value = {}\n".format(previous_value))
         logic.restricted_notify_allowed_users(previous_value, resource)
 
