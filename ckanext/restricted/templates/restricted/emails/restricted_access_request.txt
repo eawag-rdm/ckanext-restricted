@@ -4,13 +4,15 @@ A user has requested access to your data in {{ site_title }}:
 
  * Package: {{ package_name }}
  
- * Resource: {{ resource_name }} ({{ resource_link }})
+ * Resource: {{ resource_name }}
+   ({{ resource_link }})
  
  * User: {{ user_id }} ({{ user_name }} <{{ user_email }}>)
  
  * Message: {{ message }}
 
-You can allow this user to access {{ resource_name }} by adding {{ user_id }} to the list of allowed users ({{ resource_edit_link }}).
+You can allow this user to access {{ resource_name }} by adding {{ user_id }} to the list of allowed users
+({{ resource_edit_link }}).
 
 
 If you don't have the necessary permission, please contact your Data Manager:
@@ -21,5 +23,3 @@ Homepage: {{ data_manager_homepage }}
 Kind regards,
 {{ site_title }} Administrator <{{ admin_email_to }}>
 
-----------------------------------------------------------
-Message sent from {{ site_title }} ({{ site_url }})

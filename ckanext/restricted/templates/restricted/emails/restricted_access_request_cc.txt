@@ -1,0 +1,11 @@
+FYI:
+
+An email requesting access to a ressource in {{ site_title }} was sent.
+
+To: {{ maintainer_name }} <{{maintainer_email}}>
+
+On behalf of: {{ user_id }} ({{ user_name }} <{{ user_email }}>)
+
+Package: {{ package_name }}
+
+Resource: {{ resource_name }} ({{ resource_link }})

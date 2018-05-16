@@ -1,5 +1,7 @@
 {% extends "restricted/restricted_request_access_base.html" %}
 
+{% set contact = (data.get('maintainer_name') ~ "&nbsp;&lt;" ~ data.get('maintainer_email') ~ "&gt;") |safe  %}
+
 {% block primary_content_inner %}
   <h2 class="page-heading">{{ _('Request for access') }} 
      <i class="fa fa-envelope-o restricted-icon-large"></i>
@@ -8,7 +10,7 @@
   <article class="module">
     <div class="module-content">
       {% if not error_summary %}
-	<div>Your request has been sent to {{ data.get('user_name') }}.
+	<div>Your request has been sent to {{contact}}.
 	  A copy was sent to {{ data.get('user_email') }}.</div>
       {% else %}
 	<div class="error-block" style="width:100%;font-size:12pt;">
@@ -21,10 +23,9 @@
       <div class="restricted-request-summary" >
          <ul>
          <li><b>{{ _('User') }}:</b> {{ data.get('user_name') }}</li>
-         <li><b>{{ _('User Mail') }}:</b> {{ data.get('user_email') }}</li>
-         <li><b>{{ _('Dataset') }}:</b> {{ data.get('package_id') }}</li>
-         <li><b>{{ _('Resource') }}:</b> {{ data.get('resource_id') }}</li>
-         <li><b>{{ _('Contact Email') }}:</b> {{ data.get('maintainer_email') }}</li>
+         <li><b>{{ _('User Email') }}:</b> {{ data.get('user_email') }}</li>
+         <li><b>{{ _('Package') }}:</b> {{ data.get('package_id') }}</li>
+         <li><b>{{ _('Resource') }}:</b> {{ data.get('resource_name') }}</li>
          <li><b>{{ _('Message') }}:</b> {{ data.get('message') }}</li>
        </ul>
      </div>

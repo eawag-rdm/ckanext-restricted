@@ -35,19 +35,21 @@ class RestrictedController(toolkit.BaseController):
         except logic.NotAuthorized:
             base.abort(401, _('Not authorized to see this page'))
 
-    def _send_request_mail(self, data):
+    def _send_request_mail(self, data, resource_id):
         access_mail_template = 'restricted/emails/restricted_access_request.txt'
+        access_mail_template_cc = 'restricted/emails/restricted_access_request_cc.txt'
+        
         resource_link = toolkit.url_for(
             controller='package',
             action='resource_read',
             id=data.get('package_name'),
-            resource_id=data.get('resource_id'))
+            resource_id=resource_id)
         
         resource_edit_link = toolkit.url_for(
             controller='package',
             action='resource_edit',
             id=data.get('package_name'),
-            resource_id=data.get('resource_id'))
+            resource_id=resource_id)
 
         organame = data.get('pkg_dict').get('organization').get('name')
         datamanager = toolkit.get_action('eaw_schema_datamanger_show')(
@@ -57,6 +59,7 @@ class RestrictedController(toolkit.BaseController):
             'site_title': config.get('ckan.site_title'),
             'site_url': config.get('ckan.site_url'),
             'maintainer_name': data.get('maintainer_name'),
+            'maintainer_email': data.get('maintainer_name'),
             'user_id': data.get('user_id'),
             'user_name': data.get('user_name'),
             'user_email': data.get('user_email'),
@@ -95,6 +98,7 @@ class RestrictedController(toolkit.BaseController):
             
         # A copy goes to the admin. CC doesn't work because ckan.lib.mailer
         # does not parameterize envelope addresss.
+        body = render_jinja2(access_mail_template_cc, extra_vars)
         try:
             mailer.mail_recipient(admin_name, admin_email,
                                   subject + ' (copy)', body, headers)
@@ -128,7 +132,7 @@ class RestrictedController(toolkit.BaseController):
         return False
 
         
-    def _send_request(self, context=None):
+    def _send_request(self, resource_id, context=None):
         try:
             data_dict = logic.clean_dict(unflatten(
                 logic.tuplize_dict(logic.parse_params(request.params))))
@@ -157,7 +161,7 @@ class RestrictedController(toolkit.BaseController):
                 resource_id=data_dict.get('resource'),
                 errors=errors, error_summary=error_summary, data=data_dict)
 
-        error_summary = self._send_request_mail(data_dict)
+        error_summary = self._send_request_mail(data_dict, resource_id)
         return render('restricted/restricted_request_access_result.html',
                       extra_vars={
                           'data': data_dict,
@@ -173,7 +177,7 @@ class RestrictedController(toolkit.BaseController):
                                  ' logged in users only.'))
 
         if ('save' in request.params) and data and (not errors):
-            return self._send_request()
+            return self._send_request(resource_id)
         
         if not data:
             user = toolkit.get_action('user_show')(None, {'id': user_id})
@@ -217,7 +221,6 @@ class RestrictedController(toolkit.BaseController):
     def _get_contact_details(self, pkg_dict):
         contact_email = ""
         contact_name = ""
-        
         # Usage contact in Lastname, Firstname(s) <name@email.provider.tld> form.
         
         # This defined a valid emai address, according to
@@ -237,31 +240,4 @@ class RestrictedController(toolkit.BaseController):
         contact_email = parsed.groupdict().get('contact_email', '')
         contact_name = parsed.groupdict().get('contact_name', '')
 
-        # Maintainer as Composite field
-        if not contact_email:
-            try:
-                contact_email = json.loads(pkg_dict.get('maintainer', "{}")).get('email','')
-                contact_name = json.loads(pkg_dict.get('maintainer', "{}")).get('name','Dataset Maintainer')
-            except:
-                pass
-        # Maintainer Directly defined
-        if not contact_email:
-            contact_email = pkg_dict.get('maintainer_email', "")
-            contact_name = pkg_dict.get('maintainer', "Dataset Maintainer")
-        # 1st Author Directly defined
-        if not contact_email:
-            contact_email = pkg_dict.get('author_email', '')
-            contact_name = pkg_dict.get('author', '')
-        # First Author from Composite Repeating
-        if not contact_email:
-            try:
-                author = json.loads(pkg_dict.get('author'))[0]
-                contact_email = author.get('email','')
-                contact_name = author.get('name','Dataset Maintainer')
-            except:
-                pass
-        # CKAN instance Admin
-        if not contact_email:
-            contact_email = config.get('email_to', 'email_to_undefined')
-            contact_name = "CKAN Admin"
         return {'contact_email':contact_email, 'contact_name':contact_name}
