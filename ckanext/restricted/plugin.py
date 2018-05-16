@@ -53,7 +53,7 @@ class RestrictedPlugin(plugins.SingletonPlugin):
 
     # IResourceController
     def before_update(self, context, current, resource):
-        context['__restricted_previous_value'] = current.get('restricted')
+        context['__restricted_previous_value'] = current.get('allowed_users')
 
     def after_update(self, context, resource):
         previous_value = context.get('__restricted_previous_value')

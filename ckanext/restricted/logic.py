@@ -112,25 +112,27 @@ def restricted_allowed_user_mail_body(user, resource):
     return render_jinja2('restricted/emails/restricted_user_allowed.txt', extra_vars)
 
 def restricted_notify_allowed_users(previous_value, updated_resource):
-    def _safe_json_loads(json_string, default={}):
-        try:
-            return loads(json_string)
-        except:
-            return default
+    log.debug("\n\n  IN restricted_notify_allow_users\n\n")
+    log.debug('\n\n previous_value: {}\n'.format(previous_value))
+    log.debug('\n\n updated_resource: {}\n'.format(updated_resource))
 
-    previous_allowed_users = set(
-        [u for u in (_safe_json_loads(previous_value)
-                     .get('allowed_users', '')
-                     .split(',')) if u])
 
-    updated_restricted = _safe_json_loads(updated_resource.get('restricted', ''))
-    updated_allowed_users =  set(
-        [u for u in (_safe_json_loads(updated_resource.get('restricted', ''))
-                     .get('allowed_users', '')
-                     .split(',')) if u])
-    
 
+     
+    # def _safe_json_loads(json_string, default={}):
+    #     try:
+    #         return loads(json_string)
+    #     except:
+    #         return default
+
+    previous_allowed_users = set(previous_value.split(','))
+    log.debug('\n\n previous_allowed_users: {}\n'.format(previous_allowed_users))
+    updated_allowed_users =  set(updated_resource.get('allowed_users', '')
+                                 .split(','))
+    log.debug('\n\n updated_allowed_users: {}\n'.format(updated_allowed_users))
     notify_users = updated_allowed_users - previous_allowed_users
+    log.debug('\n\n notify_users: {}\n'.format(notify_users))
+
 
     for user_id in notify_users:
         log.debug('\n\n user_id: {}\n'.format(user_id))
