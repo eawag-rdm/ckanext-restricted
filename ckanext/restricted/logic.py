@@ -96,15 +96,20 @@ def restricted_mail_allowed_user(user_id, resource):
     except:
         log.warning('restricted_mail_allowed_user: Failed to send mail to "{0}"'.format(user_id))
 
+        
 def restricted_allowed_user_mail_body(user, resource):
+    resource_link = toolkit.url_for(
+        controller='package', action='resource_read',
+        id=resource.get('package_id'), resource_id=resource.get('id'))
+    log.debug('\n\n resource: {}\n'.format(resource))
 
-    resource_link = toolkit.url_for(controller='package', action='resource_read',
-                                    id=resource.get('package_id'), resource_id=resource.get('id'))
     extra_vars = {
         'site_title': config.get('ckan.site_title'),
         'site_url': config.get('ckan.site_url'),
         'user_name': user.get('display_name', user['name']),
         'resource_name': resource.get('name', resource['id']),
+        'package_name': resource.get('package_name','No FUCKING PACKAGE_NAME'),
+        'package_id': resource.get('package_id','No FUCKING PACKAGE_ID'),
         'resource_link': config.get('ckan.site_url') + resource_link,
         'resource_url': resource.get('url')
         }
@@ -112,31 +117,12 @@ def restricted_allowed_user_mail_body(user, resource):
     return render_jinja2('restricted/emails/restricted_user_allowed.txt', extra_vars)
 
 def restricted_notify_allowed_users(previous_value, updated_resource):
-    log.debug("\n\n  IN restricted_notify_allow_users\n\n")
-    log.debug('\n\n previous_value: {}\n'.format(previous_value))
-    log.debug('\n\n updated_resource: {}\n'.format(updated_resource))
-
-
-
-     
-    # def _safe_json_loads(json_string, default={}):
-    #     try:
-    #         return loads(json_string)
-    #     except:
-    #         return default
-
     previous_allowed_users = set(previous_value.split(','))
-    log.debug('\n\n previous_allowed_users: {}\n'.format(previous_allowed_users))
     updated_allowed_users =  set(updated_resource.get('allowed_users', '')
                                  .split(','))
-    log.debug('\n\n updated_allowed_users: {}\n'.format(updated_allowed_users))
     notify_users = updated_allowed_users - previous_allowed_users
-    log.debug('\n\n notify_users: {}\n'.format(notify_users))
-
-
     for user_id in notify_users:
-        log.debug('\n\n user_id: {}\n'.format(user_id))
-        #restricted_mail_allowed_user(user_id, updated_resource)
+        restricted_mail_allowed_user(user_id, updated_resource)
 
 
 

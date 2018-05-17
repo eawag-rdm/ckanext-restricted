@@ -1,5 +1,5 @@
 import ckan.plugins as plugins
-import ckan.plugins.toolkit as toolkit
+import ckan.plugins.toolkit as tk
 from ckanext.restricted import helpers
 from ckanext.restricted import logic
 from ckanext.restricted import auth
@@ -9,7 +9,10 @@ from ckanext.restricted import action
 from logging import getLogger
 log = getLogger(__name__)
 
-_get_or_bust = toolkit.get_or_bust
+_get_or_bust = tk.get_or_bust
+
+def restricted_get_user_id():
+    return tk.c.user
 
 class RestrictedPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
@@ -21,9 +24,9 @@ class RestrictedPlugin(plugins.SingletonPlugin):
 
     # IConfigurer
     def update_config(self, config_):
-        toolkit.add_template_directory(config_, 'templates')
-        toolkit.add_public_directory(config_, 'public')
-        toolkit.add_resource('fanstatic', 'restricted')
+        tk.add_template_directory(config_, 'templates')
+        tk.add_public_directory(config_, 'public')
+        tk.add_resource('fanstatic', 'restricted')
 
     # IActions
     def get_actions(self):
@@ -34,7 +37,7 @@ class RestrictedPlugin(plugins.SingletonPlugin):
 
     # ITemplateHelpers
     def get_helpers(self):
-        return { 'restricted_get_user_id':helpers.restricted_get_user_id}
+        return { 'restricted_get_user_id': restricted_get_user_id}
 
     # IAuthFunctions
     def get_auth_functions(self):
@@ -53,9 +56,16 @@ class RestrictedPlugin(plugins.SingletonPlugin):
 
     # IResourceController
     def before_update(self, context, current, resource):
-        context['__restricted_previous_value'] = current.get('allowed_users')
+        if tk.asbool(
+                tk.config.get(
+                    'ckanext.restricted.notify_allowed_users', 'False')):
+            context['__restricted_previous_value'] = current.get('allowed_users')
 
     def after_update(self, context, resource):
-        previous_value = context.get('__restricted_previous_value')
-        logic.restricted_notify_allowed_users(previous_value, resource)
+        if tk.asbool(
+                tk.config.get(
+                    'ckanext.restricted.notify_allowed_users', 'False')):
+            previous_value = context.get('__restricted_previous_value')
+            resource['package_name'] = context.get('package').name
+            logic.restricted_notify_allowed_users(previous_value, resource)
 

@@ -1,7 +1,10 @@
-
 Dear {{ user_name }},
 
-You have requested access on {{ site_title }} to the resource '{{ resource_name }}'.
+You have requested access on {{ site_title }} to
+
+Resource '{{ resource_name }}' in
+Package '{{ package_name }}'.
+
 The contact person of the package has granted you access.
 
 Please click the following link: {{ resource_link }}
@@ -9,6 +12,3 @@ Please click the following link: {{ resource_link }}
 
 Best regards,
 {{ site_title }} Administrator
-
-----------------------------------------------------------
-Message sent from {{ site_title }} ({{ site_url }})
