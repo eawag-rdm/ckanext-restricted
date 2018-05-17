@@ -1,6 +1,6 @@
 import ckan.lib.mailer as mailer
+from email.header import Header
 import ckan.logic as logic
-#from ckan.common import config
 from ckan.lib.base import render_jinja2
 import ckan.plugins.toolkit as toolkit
 from json import loads
@@ -72,36 +72,40 @@ def restricted_check_user_resource_access(user, resource_dict, package_dict):
 
 
 def restricted_mail_allowed_user(user_id, resource):
+ 
+    # Get user information
+    context = {}
+    context['ignore_auth'] = True
+    context['keep_email'] = True
+    user = toolkit.get_action('user_show')(context, {'id': user_id})
+    user_email = user['email']
+    user_name = Header(
+        u'"{}"'.format(user.get('display_name', user['name'])),
+        'utf-8').encode('utf-8')
+
+    resource_name = resource.get('name', resource['id'])
+    mail_body = restricted_allowed_user_mail_body(user, resource)
+    mail_subject = ('Access granted to resource {}'
+                    .format(resource_name).encode('utf-8'))
+    admin_email = config.get('email_to')
     try:
-        # Get user information
-        context = {}
-        context['ignore_auth'] = True
-        context['keep_email'] = True
-        user = toolkit.get_action('user_show')(context, {'id': user_id})
-        user_email = user['email']
-        user_name = user.get('display_name', user['name'])
-        resource_name = resource.get('name', resource['id'])
-
-        # maybe check user[activity_streams_email_notifications]==True
-
-        mail_body = restricted_allowed_user_mail_body(user, resource)
-        mail_subject = 'Access granted to resource {0}'.format(resource_name)
-
         # Send mail to user
-        mailer.mail_recipient(user_name, user_email, mail_subject, mail_body)
-
-        # Sendo copy to admin
-        mailer.mail_recipient('CKAN Admin', config.get('email_to'), 'Fwd: ' + mail_subject, mail_body)
-
+        mailer.mail_recipient(user_name, user_email, mail_subject,
+                              mail_body, headers={'Reply-To': admin_email})
     except:
-        log.warning('restricted_mail_allowed_user: Failed to send mail to "{0}"'.format(user_id))
+        log.error('Failed to send mail to "{}"'.format(user_email))
+    try:
+        # Send a copy to admin
+        mailer.mail_recipient('CKAN Admin', admin_email,
+                              'Fwd: {}'.format(mail_subject), mail_body)
+    except:
+        log.error('Failed to send mail to "{}"'.format(admin_email))
 
         
 def restricted_allowed_user_mail_body(user, resource):
     resource_link = toolkit.url_for(
         controller='package', action='resource_read',
         id=resource.get('package_id'), resource_id=resource.get('id'))
-    log.debug('\n\n resource: {}\n'.format(resource))
 
     extra_vars = {
         'site_title': config.get('ckan.site_title'),

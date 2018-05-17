@@ -78,9 +78,9 @@ class RestrictedController(toolkit.BaseController):
         subject = Header(
             'Access request for  ' + data.get('package_name')
             + '/' + data.get('resource_name'), 'utf-8').encode('utf-8')
-        recip_name = (u'"'
-                      + data.get('maintainer_name').decode('utf-8')
-                      + u'"')
+        recip_name = Header(
+            u'"{}"'.format(data.get('maintainer_name')),
+            'utf-8').encode('utf-8')
         recip_email = data.get('maintainer_email').encode('utf-8')
         admin_name = ('{} Admin'
                       .format(config.get('ckan.site_title'))
@@ -117,7 +117,7 @@ class RestrictedController(toolkit.BaseController):
                      '----------------------------------------------------\n'
                      '{}'.format(body) + '\n-------------------------------'
                      '--------------------------------------------\n')
-        headers = {'Reply-To': config.get('email_to').decode('utf-8')}
+        headers = {'Reply-To': config.get('email_to').encode('utf-8')}
         recip_name = Header(
             u'"{}"'.format(data.get('user_name')), 'utf-8').encode('utf-8')
         try:

@@ -10,7 +10,6 @@ from ckan.logic.action.get import (
     package_search)
 import ckan.logic.auth as logic_auth
 import ckan.authz as authz
-from ckanext.restricted import helpers
 from ckanext.restricted import logic
 from ckanext.restricted import auth
 
@@ -35,7 +34,9 @@ def restricted_resource_view_list(context, data_dict):
     resource = model.Resource.get(id)
     if not resource:
         raise NotFound
-    authorized = auth.restricted_resource_show(context, {'id':resource.get('id'), 'resource':resource }).get('success', False)
+    authorized = auth.restricted_resource_show(
+        context,
+        {'id':resource.get('id'), 'resource':resource }).get('success', False)
     if not authorized:
         return []
     else:

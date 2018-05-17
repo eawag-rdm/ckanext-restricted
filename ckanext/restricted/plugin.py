@@ -1,6 +1,5 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as tk
-from ckanext.restricted import helpers
 from ckanext.restricted import logic
 from ckanext.restricted import auth
 from ckanext.restricted import action
