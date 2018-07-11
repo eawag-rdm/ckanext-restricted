@@ -121,6 +121,7 @@ def restricted_allowed_user_mail_body(user, resource):
     return render_jinja2('restricted/emails/restricted_user_allowed.txt', extra_vars)
 
 def restricted_notify_allowed_users(previous_value, updated_resource):
+    previous_value = '' if previous_value is None else previous_value
     previous_allowed_users = set(previous_value.split(','))
     updated_allowed_users =  set(updated_resource.get('allowed_users', '')
                                  .split(','))
