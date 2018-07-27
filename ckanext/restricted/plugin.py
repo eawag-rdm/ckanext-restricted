@@ -31,8 +31,8 @@ class RestrictedPlugin(plugins.SingletonPlugin):
     def get_actions(self):
         return {'resource_view_list': action.restricted_resource_view_list,
                 'package_show': action.restricted_package_show,
-                'resource_search': action.restricted_resource_search,
-                'package_search': action.restricted_package_search}
+                'resource_search': action.restricted_resource_search}
+                # 'package_search': action.restricted_package_search}
 
     # ITemplateHelpers
     def get_helpers(self):
