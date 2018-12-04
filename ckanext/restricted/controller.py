@@ -178,7 +178,7 @@ class RestrictedController(toolkit.BaseController):
 
         if ('save' in request.params) and data and (not errors):
             return self._send_request(resource_id)
-        
+        print('\nrestricted_access_form data: {}\n'.format(data))       
         if not data:
             user = toolkit.get_action('user_show')(None, {'id': user_id})
             try:
@@ -221,23 +221,7 @@ class RestrictedController(toolkit.BaseController):
     def _get_contact_details(self, pkg_dict):
         contact_email = ""
         contact_name = ""
-        # Usage contact in Lastname, Firstname(s) <name@email.provider.tld> form.
-        
-        # This defined a valid emai address, according to
-        # https://stackoverflow.com/a/201378
-        emailregex = (
-            '(?:[a-z0-9!#$%&\'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&\'*+/=?^_`{|}~-]+'
-            ')*|\\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x'
-            '7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\\")@(?:(?:[a-z0-9](?:['
-            'a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:(2'
-            '(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\.){3}(?:(2(5[0-5]|[0'
-            '-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x'
-            '08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0'
-            'b\\x0c\\x0e-\\x7f])+)\\])')
-        personregex = re.compile('(?P<contact_name>.*?)<(?P<contact_email>'
-                                 + emailregex+r')>')
-        parsed = re.search(personregex, pkg_dict.get('usage_contact'))
-        contact_email = parsed.groupdict().get('contact_email', '')
-        contact_name = parsed.groupdict().get('contact_name', '')
-
-        return {'contact_email':contact_email, 'contact_name':contact_name}
+        usage_contact = toolkit.h['eaw_schema_geteawuser'](pkg_dict.get('usage_contact'))
+        contact_email = usage_contact['email']
+        contact_name = usage_contact['fullname']
+        return {'contact_email': contact_email, 'contact_name': contact_name}
