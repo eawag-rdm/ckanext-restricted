@@ -4,14 +4,7 @@ import ckan.logic as logic
 from ckan.lib.base import render_jinja2
 import ckan.plugins.toolkit as toolkit
 from json import loads
-
-try:
-    # CKAN 2.7 and later
-    from ckan.common import config
-except ImportError:
-    # CKAN 2.6 and earlier
-    from pylons import config
-
+from ckan.common import config
 from logging import getLogger
 log = getLogger(__name__)
 
