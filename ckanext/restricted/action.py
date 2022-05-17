@@ -13,12 +13,8 @@ import ckan.authz as authz
 from ckanext.restricted import logic
 from ckanext.restricted import auth
 
-try:
     # CKAN 2.7 and later
-    from ckan.common import config
-except ImportError:
-    # CKAN 2.6 and earlier
-    from pylons import config
+from ckan.common import config
 
 from logging import getLogger
 log = getLogger(__name__)
