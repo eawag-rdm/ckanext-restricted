@@ -9,12 +9,7 @@ import ckan.plugins.toolkit as toolkit
 from ckan.common import _, request, c, g
 from ckan.lib.base import render_jinja2
 from logging import getLogger
-try:
-    # CKAN 2.7 and later
-    from ckan.common import config
-except ImportError:
-    # CKAN 2.6 and earlier
-    from pylons import config
+from ckan.common import config
 from email.header import Header
 import simplejson as json
 import ckan.lib.navl.dictization_functions as dictization_functions
@@ -40,13 +35,13 @@ class RestrictedController(toolkit.BaseController):
         access_mail_template_cc = 'restricted/emails/restricted_access_request_cc.txt'
         
         resource_link = toolkit.url_for(
-            controller='package',
+            controller='dataset',
             action='resource_read',
             id=data.get('package_name'),
             resource_id=resource_id)
         
         resource_edit_link = toolkit.url_for(
-            controller='package',
+            controller='dataset',
             action='resource_edit',
             id=data.get('package_name'),
             resource_id=resource_id)
