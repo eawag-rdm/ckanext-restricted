@@ -80,7 +80,7 @@ def restricted_mail_allowed_user(user_id, resource):
     user = toolkit.get_action('user_show')(context, {'id': user_id})
     user_email = user['email']
     user_name = Header(
-        '"{}"'.format(user.get('display_name', user['name'])),
+        u'"{}"'.format(user.get('display_name', user['name'])),
         'utf-8').encode('utf-8')
 
     resource_name = resource.get('name', resource['id'])

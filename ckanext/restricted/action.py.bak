@@ -64,7 +64,7 @@ def restricted_resource_search(context, data_dict):
 
     restricted_resource_search_result = {}
 
-    for key,value in list(resource_search_result.items()):
+    for key,value in resource_search_result.items():
         if key == 'results':
             restricted_resource_search_result[key] = _restricted_resource_list_url(context, value)
         else:
@@ -78,7 +78,7 @@ def restricted_package_search(context, data_dict):
 
     restricted_package_search_result = {}
 
-    for key,value in list(package_search_result.items()):
+    for key,value in package_search_result.items():
         if key == 'results':
             restricted_package_search_result_list = []
             for package in value:
