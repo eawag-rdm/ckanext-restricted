@@ -1,5 +1,5 @@
-restricted_theme_css:  # name of asset
+restricted_theme_css:
   filter: cssrewrite
-  output: ckanext-restricted/%(version)s_restricted_theme.css  # actual path, where generated file will be stored
-  contents: # list of files that are included into asset
+  output: ckanext-restricted/%(version)s_restricted_theme.css  
+  contents: 
     - styles/restricted_theme.css
