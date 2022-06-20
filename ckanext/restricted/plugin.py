@@ -3,6 +3,7 @@ import ckan.plugins.toolkit as tk
 from ckanext.restricted import logic
 from ckanext.restricted import auth
 from ckanext.restricted import action
+import ckanext.restricted.blueprints as blueprints
 # from json import dumps, loads
 
 from logging import getLogger
@@ -18,7 +19,7 @@ class RestrictedPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IAuthFunctions)
-    plugins.implements(plugins.IRoutes, inherit=True)
+    plugins.implements(plugins.IBlueprint, inherit=True)
     plugins.implements(plugins.IResourceController, inherit=True)
 
     # IConfigurer
@@ -43,15 +44,11 @@ class RestrictedPlugin(plugins.SingletonPlugin):
         return { 'resource_show': auth.restricted_resource_show,
                  'resource_view_show': auth.restricted_resource_show
                }
-    # IRoutes
-    def before_map(self, map_):
-        map_.connect(
-            'restricted_request_access',
-            '/dataset/{package_id}/restricted_request_access/{resource_id}',
-            controller='ckanext.restricted.controller:RestrictedController',
-            action = 'restricted_request_access_form'
-        )
-        return map_
+
+    # IBlueprint
+    def get_blueprint(self):
+        return blueprints.get_blueprints(self.name, self.__module__)
+        
 
     # IResourceController
     def before_update(self, context, current, resource):
