@@ -3,6 +3,7 @@ import ckan.plugins.toolkit as tk
 from ckanext.restricted import logic
 from ckanext.restricted import auth
 from ckanext.restricted import action
+import ckanext.restricted.blueprints as blueprints
 # from json import dumps, loads
 
 from flask import Blueprint, request, render_template
@@ -79,7 +80,6 @@ class RestrictedPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IAuthFunctions)
-#    plugins.implements(plugins.IRoutes, inherit=True)
     plugins.implements(plugins.IBlueprint, inherit=True)
     plugins.implements(plugins.IResourceController, inherit=True)
 
@@ -105,6 +105,7 @@ class RestrictedPlugin(plugins.SingletonPlugin):
         return { 'resource_show': auth.restricted_resource_show,
                  'resource_view_show': auth.restricted_resource_show
                }
+<<<<<<< HEAD
 #    # IRoutes   #no longer used - 2cleanup
 #    def before_map(self, map_):
 #        map_.connect(
@@ -124,6 +125,13 @@ class RestrictedPlugin(plugins.SingletonPlugin):
         )
 
         return blueprint
+=======
+
+    # IBlueprint
+    def get_blueprint(self):
+        return blueprints.get_blueprints(self.name, self.__module__)
+        
+>>>>>>> int_rel2_hvw
 
     # IResourceController
     def before_update(self, context, current, resource):
