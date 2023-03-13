@@ -105,7 +105,6 @@ class RestrictedPlugin(plugins.SingletonPlugin):
         return { 'resource_show': auth.restricted_resource_show,
                  'resource_view_show': auth.restricted_resource_show
                }
-<<<<<<< HEAD
 #    # IRoutes   #no longer used - 2cleanup
 #    def before_map(self, map_):
 #        map_.connect(
@@ -125,13 +124,6 @@ class RestrictedPlugin(plugins.SingletonPlugin):
         )
 
         return blueprint
-=======
-
-    # IBlueprint
-    def get_blueprint(self):
-        return blueprints.get_blueprints(self.name, self.__module__)
-        
->>>>>>> int_rel2_hvw
 
     # IResourceController
     def before_update(self, context, current, resource):
