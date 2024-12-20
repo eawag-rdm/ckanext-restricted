@@ -54,9 +54,11 @@ function install_ckan_with_uv {
     source $VIRTUALENV_NAME/bin/activate    
 
     uv pip install -r https://raw.githubusercontent.com/ckan/ckan/$CKAN_VERSION/requirement-setuptools.txt
+    uv pip install git+https://github.com/ckan/ckan.git@$CKAN_VERSION#egg=ckan[requirements]
+
     uv pip install -r https://raw.githubusercontent.com/ckan/ckan/$CKAN_VERSION/dev-requirements.txt
     uv pip install -r https://raw.githubusercontent.com/ckan/ckan/$CKAN_VERSION/requirements.txt
-    uv pip install git+https://github.com/ckan/ckan.git#egg=ckan[requirements,dev]
+    
 }
 
 function install_ckan_with_pip {
@@ -66,10 +68,11 @@ function install_ckan_with_pip {
 
     pip install --upgrade pip==22.0.4
     pip install -r https://raw.githubusercontent.com/ckan/ckan/$CKAN_VERSION/requirement-setuptools.txt
+    pip install -e "git+https://github.com/ckan/ckan.git@$CKAN_VERSION#egg=ckan[requirements]"
+
     pip install -r https://raw.githubusercontent.com/ckan/ckan/$CKAN_VERSION/dev-requirements.txt
     pip install -r https://raw.githubusercontent.com/ckan/ckan/$CKAN_VERSION/requirements.txt
-
-    pip install -e 'git+https://github.com/ckan/ckan.git#egg=ckan[requirements,dev]'
+    
 }
 
 function install {
