@@ -2,9 +2,13 @@
 {% set authorized = h.check_access('resource_show', {'id':res.id}) %}
 {% set user_id = h.restricted_get_user_id() %}
 {% block resource_item_title %}
+
     {% if authorized %}
         {{ super() }}
     {% else %}
+
+        <strong style="color: red;">Logged in but not authorized</strong>
+
         <a class="heading restricted-item">
             {{ h.resource_display_name(res) | truncate(50) }}
             <span class="format-label"
@@ -20,7 +24,7 @@
     {% else %}
         {% if user_id %}
             <div class="dropdown btn-group restricted">
-                <p>Logged in but not authorized</p>
+                <bold>Logged in but not authorized</bold>
             </div>
         {% else %}
             <div class="restricted-login">
