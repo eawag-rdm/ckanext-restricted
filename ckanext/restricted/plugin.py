@@ -2,5 +2,5 @@
 import ckan.plugins as plugins
 
 
-class ExampleIAuthFunctionsPlugin(plugins.SingletonPlugin):
+class RestrictedPlugin(plugins.SingletonPlugin):
     pass
