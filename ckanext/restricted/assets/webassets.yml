@@ -1,5 +1,0 @@
-restricted_theme_css:
-  filter: cssrewrite
-  output: ckanext-restricted/%(version)s_restricted_theme.css  
-  contents: 
-    - styles/restricted_theme.css
