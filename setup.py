@@ -27,7 +27,7 @@ setup(
     keywords="CKAN Eawag dataset restriction custom",
     packages=find_packages(exclude=["contrib", "docs", "tests*"]),
     namespace_packages=["ckanext"],
-    python_requires=">=3.9",
+    python_requires=">=3.8",
     install_requires=[
         # Dependencies should be listed in a `requirements.txt` file.
     ],
