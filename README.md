@@ -2,8 +2,9 @@
 
 # ckanext-restricted
 
-This CKAN extension allows for more granular access control and is based on the work of the EnviDat team of WSL.
-The deployment branch is called for **ERIC** is called `eric`. y
+This CKAN extension allows for more granular access control and is based on the package with the same name `ckanext-restricted` by the EnviDat team of WSL.
+For use in our internal data repository the functionality has been strongly trimmed down to a bare minimum. Requesting access via the ERIC frontend is no longer possible.
+The deployment branch is called **eric**. 
 
 ## Requirements
 
