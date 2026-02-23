@@ -35,6 +35,13 @@ def restricted_resource_view_list(context, data_dict):
 
 @side_effect_free
 def restricted_package_show(context, data_dict):
+    # During search indexing (ignore_auth=True, validate=False), skip
+    # restriction logic and pass through to the original package_show.
+    # This avoids NotFound errors when the indexer calls package_show
+    # during model notify before the transaction is fully committed.
+    if context.get("ignore_auth") and not context.get("validate", True):
+        return package_show(context, data_dict)
+
     package_metadata = package_show(context, data_dict)
     # Ensure user who can edit can see the resource
     if authz.is_authorized("package_update", context, package_metadata).get(
