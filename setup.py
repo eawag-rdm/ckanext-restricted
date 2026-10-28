@@ -14,7 +14,7 @@ setup(
     description="Eawag access restriction. Depends on ckanext-scheming and ckanext-repeating.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/eawag-rdm/ckanext-restricted",
+    url="https://gitlab.eawag.ch/rdm/eric/ckanext-restricted",
     author="Christian Foerster",
     author_email="Christian.Foerster@eawag.ch",
     license="AGPL-3.0-or-later",
